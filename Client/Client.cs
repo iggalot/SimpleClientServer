@@ -42,7 +42,7 @@ namespace ConsoleClient
         public static void Send(NetworkStream stream, string message)
         {
             // Translate the passed message into ASCII and store it as a Byte array
-            Byte[] senddata = System.Text.Encoding.ASCII.GetBytes(message);
+            Byte[] senddata = System.Text.Encoding.ASCII.GetBytes(message+"$");
 
             // Send the message to the connected TcpServer.
             stream.Write(senddata, 0, senddata.Length);
