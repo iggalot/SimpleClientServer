@@ -40,7 +40,7 @@ namespace ClientServerLibrary
             ListenForConnections();
         }
 
-        private static void ListenForConnections() { 
+        private void ListenForConnections() { 
 
             int counter = 0;
             counter = 0;   // for counting our connections.
@@ -67,7 +67,7 @@ namespace ClientServerLibrary
                 // Once connected, hand off the new connection to client handler class
                 Console.WriteLine(" >> " + "Client No:" + Convert.ToString(counter) + " started!");
                 handleClient client = new handleClient();
-                client.startClient(clientSocket, Convert.ToString(counter));
+                client.startClient(this, clientSocket, Convert.ToString(counter));
             }
         }
 
@@ -81,6 +81,34 @@ namespace ClientServerLibrary
             Console.WriteLine(" >> " + "exit");
             Console.ReadLine();
         }
+
+        /// <summary>
+        /// Broadcasts a string message to a single specified network stream
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="message"></param>
+        public void BroadcastToSingle(TcpClient client, string message)
+        {
+            NetworkStream stream = client.GetStream();
+
+            Byte[] sendBytes = Encoding.ASCII.GetBytes(message);
+            stream.Write(sendBytes, 0, sendBytes.Length);
+            stream.Flush();
+            Console.WriteLine(" >> " + message);
+        }
+
+        /// <summary>
+        /// A server routine to broadcast a string message to all clients currently connected to
+        /// the server.
+        /// </summary>
+        /// <param name="message"></param>
+        public void BroadcastToAll(string message)
+        {
+            foreach(TcpClient client in ClientSocketList)
+            {
+                BroadcastToSingle(client, message);
+            }
+        }
     }
 
     /// <summary>
@@ -89,6 +117,8 @@ namespace ClientServerLibrary
     public class handleClient
     {
         TcpClient clientSocket;
+        // The server thart created this client thread
+        Server ParentServer;
         string clientNum;
 
         /// <summary>
@@ -96,11 +126,12 @@ namespace ClientServerLibrary
         /// </summary>
         /// <param name="inClientSocket">The associated client socket</param>
         /// <param name="strClientNum">String containing the clients number</param>
-        public void startClient(TcpClient inClientSocket, string strClientNum)
+        public void startClient(Server server, TcpClient inClientSocket, string strClientNum)
         {
+            this.ParentServer = server;
             this.clientSocket = inClientSocket;
             this.clientNum = strClientNum;
-            Thread ctThread = new Thread(doChat);
+            Thread ctThread = new Thread(()=>doChat());
             ctThread.Start();
         }
 
@@ -134,10 +165,9 @@ namespace ClientServerLibrary
                     // Respond back to the client by echoing the message
                     // TODO:  Create a function for how to handle a server response for a speicfic application
                     serverResponse = "Server to client(" + clientNum + ") " + "#" + rCount + ": " + dataFromClient;
-                    sendBytes = Encoding.ASCII.GetBytes(serverResponse);
-                    networkStream.Write(sendBytes, 0, sendBytes.Length);
-                    networkStream.Flush();
-                    Console.WriteLine(" >> " + serverResponse);
+
+                    // Send our response to the clientsocket of this thread.
+                    ParentServer.BroadcastToSingle(clientSocket,serverResponse);
                 }
 
                 catch (System.IO.IOException ex)

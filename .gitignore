@@ -16,3 +16,7 @@ ClientServerLibrary/obj/
 Server/bin/
 
 Server/obj/
+
+ServerConsole/bin/
+
+ServerConsole/obj/

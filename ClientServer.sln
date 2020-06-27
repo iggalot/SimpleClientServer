@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientWPF", "ClientWPF\Clie
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientServerLibrary", "ClientServerLibrary\ClientServerLibrary.csproj", "{BBE2967A-E19D-4FAD-896F-1D6EB28679BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerConsole", "Server\ServerConsole.csproj", "{F8B7950E-EC24-477A-BD5B-8EF695E581D4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerConsole", "ServerConsole\ServerConsole.csproj", "{F8B7950E-EC24-477A-BD5B-8EF695E581D4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
