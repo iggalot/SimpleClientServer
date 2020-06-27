@@ -1,7 +1,7 @@
-﻿using System;
+﻿using ClientServerLibrary;
+using System;
 using System.Net.Sockets;
 using System.Windows;
-using ConsoleClient;
 
 namespace ClientWPF
 {

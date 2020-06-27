@@ -6,3 +6,13 @@ Client/obj/Debug/
 ClientWPF/bin/
 
 ClientWPF/obj/
+
+.vs/
+
+ClientServerLibrary/bin/
+
+ClientServerLibrary/obj/
+
+Server/bin/
+
+Server/obj/

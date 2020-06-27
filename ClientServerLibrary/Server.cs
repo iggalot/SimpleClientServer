@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-namespace Server
+namespace ClientServerLibrary
 {
     /// <summary>
     /// Our primary server class that handles multiple client connections
@@ -13,47 +13,71 @@ namespace Server
     public class Server
     {
         // Store our list of client sockets.
-        public static List<TcpClient> clientSocketList { get; set; }
+        public static List<TcpClient> ClientSocketList { get; set; }
 
-        static void Main(string[] args)
+        // The socket for our server
+        public static TcpListener ServerSocket { get; set; }
+
+        // Tells our server that it should shutdown
+        public static bool ShouldShutdownNow { get; set; } = false;
+
+        public Server(string address, Int32 port)
         {
-            // Initialize our cliemnt socket list.
-            clientSocketList = new List<TcpClient>();
+            // create the list to store all of our connected sockets
+            ClientSocketList = new List<TcpClient>();
 
-            // Set the TcpListener on port 13000.
-            Int32 port = 13000;
-            //IPAddress localAddr = IPAddress.Parse("127.0.0.1");
-            IPAddress localAddr = IPAddress.Parse("10.211.55.5");
+            // Convert the string address to an IPAddress type
+            IPAddress localAddr = IPAddress.Parse(address);
 
             // TcpListener -- create the server socket
-            TcpListener serverSocket = new TcpListener(localAddr, port);
+            ServerSocket = new TcpListener(localAddr, port);
+
+            // Start listening for client requests.
+            ServerSocket.Start();
+            Console.WriteLine(" >> " + "Server Started");
+
+            // Now listen for connections.
+            ListenForConnections();
+        }
+
+        private static void ListenForConnections() { 
+
+            int counter = 0;
+            counter = 0;   // for counting our connections.
 
             // Create a default client socket to be used by each thread.
             TcpClient clientSocket = default(TcpClient);
-            int counter = 0;
 
-            // Start listening for client requests.
-            serverSocket.Start();
-            Console.WriteLine(" >> " + "Server Started");
-
-            counter = 0;   // for counting our connections.
-            // Enter the listening loop.
+            // Enter the listening loop for detecting client connections.
             while (true)
             {
+                // If we have received a signal that we should shut down break from the loop
+                if (ShouldShutdownNow)
+                    break;
+
+                // Otherwise continue listening
                 counter += 1;
                 // Perform a blocking call to accept requests.
                 // You could also use server.AcceptSocket() here.
-                clientSocket = serverSocket.AcceptTcpClient();
+                clientSocket = ServerSocket.AcceptTcpClient();
 
                 // Store the client socket in the connected socket list.
-                clientSocketList.Add(clientSocket);
+                ClientSocketList.Add(clientSocket);
 
+                // Once connected, hand off the new connection to client handler class
                 Console.WriteLine(" >> " + "Client No:" + Convert.ToString(counter) + " started!");
                 handleClient client = new handleClient();
                 client.startClient(clientSocket, Convert.ToString(counter));
             }
-            //// Shutdown and end connection
-            serverSocket.Stop();
+        }
+
+        /// <summary>
+        /// A function for shutting down the server.
+        /// </summary>
+        public void Shutdown()
+        {
+            //// Shutdown and end connection         
+            ServerSocket.Stop();
             Console.WriteLine(" >> " + "exit");
             Console.ReadLine();
         }
@@ -93,7 +117,7 @@ namespace Server
             string rCount = null;
             requestCount = 0;
 
-            while((true))
+            while ((true))
             {
                 try
                 {
@@ -105,10 +129,10 @@ namespace Server
                     dataFromClient = dataFromClient.Substring(0, dataFromClient.IndexOf("$"));
                     Console.WriteLine(" >> " + "From client-" + clientNum + ": " + dataFromClient);
 
-
                     rCount = Convert.ToString(requestCount);
 
-                    // Respond back to the client
+                    // Respond back to the client by echoing the message
+                    // TODO:  Create a function for how to handle a server response for a speicfic application
                     serverResponse = "Server to client(" + clientNum + ") " + "#" + rCount + ": " + dataFromClient;
                     sendBytes = Encoding.ASCII.GetBytes(serverResponse);
                     networkStream.Write(sendBytes, 0, sendBytes.Length);
@@ -137,3 +161,4 @@ namespace Server
         }
     }
 }
+

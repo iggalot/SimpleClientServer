@@ -95,13 +95,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Client\Client.csproj">
-      <Project>{9f8b414e-e337-4f6c-8cbf-ddbeae383ec0}</Project>
-      <Name>Client</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Server\Server.csproj">
-      <Project>{f8b7950e-ec24-477a-bd5b-8ef695e581d4}</Project>
-      <Name>Server</Name>
+    <ProjectReference Include="..\ClientServerLibrary\ClientServerLibrary.csproj">
+      <Project>{bbe2967a-e19d-4fad-896f-1d6eb28679bb}</Project>
+      <Name>ClientServerLibrary</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
