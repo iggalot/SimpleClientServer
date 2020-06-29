@@ -7,12 +7,27 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <StackPanel>
-        <Button Name="btnConnect" Content="Connect" Width="100" Height="50" Click="Button_ConnectClick"></Button>
-        <StackPanel Name="spConnectionActive" Visibility="Collapsed">
-            <TextBox Name="SendMessage" Text="enter message" Width="250" Height="25" FontSize="18" HorizontalAlignment="Center"/>
-            <Button Content="Send" Width="100" Height="50" Click="Button_SendClick"></Button>
-            <TextBlock Name="ReceiveMessage" Text="..." Width="250" Height="25" FontSize="18" HorizontalAlignment="Center"/>
-            <Button Content="Disconnect" Width="100" Height="50" Click="Button_DisconnectClick"></Button>
+        <StackPanel Name="spConnect" Orientation="Horizontal">
+            <Label Content="Name: " Height="25"/>
+            <TextBox Name="tbLoginName" Width="100" Height="25"></TextBox>
+            <Button Name="btnConnect" Content="Connect" Width="100" Height="40" Click="Button_ConnectClick"></Button>
+            <Label Name="lbConnectStatus" Foreground="Red" Width="300" Height="25"></Label>
+        </StackPanel>
+
+        <StackPanel Name="spConnectionActive" Visibility="Collapsed" HorizontalAlignment="Left">
+            <Button Content="Disconnect" Width="75" Height="25" Click="Button_DisconnectClick"></Button>
+
+            <ScrollViewer Height="200" Width="300" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <StackPanel HorizontalAlignment="Left">
+                    <TextBlock Name="ReceiveMessage"  TextWrapping="Wrap" Margin="0 0 0 20" FontSize="12" HorizontalAlignment="Center"/>
+                </StackPanel>
+             </ScrollViewer>
+
+            <StackPanel Orientation="Horizontal">
+                <TextBox Name="SendMessage" Text="enter message" Width="300" Height="25" FontSize="12" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                <Button Content="Send" Width="75" Height="25" Click="Button_SendClick"></Button>
+            </StackPanel>
+
         </StackPanel>
     </StackPanel>
 </Window>

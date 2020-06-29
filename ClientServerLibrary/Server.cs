@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -13,7 +15,7 @@ namespace ClientServerLibrary
     public class Server
     {
         // Store our list of client sockets.
-        public static List<TcpClient> ClientSocketList { get; set; }
+        public static Hashtable ClientSocketList { get; set; }
 
         // The socket for our server
         public static TcpListener ServerSocket { get; set; }
@@ -24,7 +26,7 @@ namespace ClientServerLibrary
         public Server(string address, Int32 port)
         {
             // create the list to store all of our connected sockets
-            ClientSocketList = new List<TcpClient>();
+            ClientSocketList = new Hashtable();
 
             // Convert the string address to an IPAddress type
             IPAddress localAddr = IPAddress.Parse(address);
@@ -61,13 +63,25 @@ namespace ClientServerLibrary
                 // You could also use server.AcceptSocket() here.
                 clientSocket = ServerSocket.AcceptTcpClient();
 
-                // Store the client socket in the connected socket list.
-                ClientSocketList.Add(clientSocket);
+                byte[] bytesFrom = new byte[65536];
+                string dataFromClient = null;
+
+                NetworkStream networkStream = clientSocket.GetStream();
+                networkStream.Read(bytesFrom, 0, (int)clientSocket.ReceiveBufferSize);
+                dataFromClient = System.Text.Encoding.ASCII.GetString(bytesFrom);
+                dataFromClient = dataFromClient.Substring(0, dataFromClient.IndexOf("$"));
+
+                // Store the client socket in the connected socket list if it isn't already there.
+                if(!ClientSocketList.Contains(dataFromClient))
+                    ClientSocketList.Add(dataFromClient, clientSocket);
+
+                // Announce a connection
+                BroadcastToAll(dataFromClient + " has joined the chat. ", dataFromClient, false);
 
                 // Once connected, hand off the new connection to client handler class
-                Console.WriteLine(" >> " + "Client No:" + Convert.ToString(counter) + " started!");
+                Console.WriteLine(" >> " + dataFromClient + " has joined.");
                 handleClient client = new handleClient();
-                client.startClient(this, clientSocket, Convert.ToString(counter));
+                client.startClient(clientSocket, dataFromClient, ClientSocketList);
             }
         }
 
@@ -83,30 +97,45 @@ namespace ClientServerLibrary
         }
 
         /// <summary>
-        /// Broadcasts a string message to a single specified network stream
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="message"></param>
-        public void BroadcastToSingle(TcpClient client, string message)
-        {
-            NetworkStream stream = client.GetStream();
-
-            Byte[] sendBytes = Encoding.ASCII.GetBytes(message);
-            stream.Write(sendBytes, 0, sendBytes.Length);
-            stream.Flush();
-            Console.WriteLine(" >> " + message);
-        }
-
-        /// <summary>
         /// A server routine to broadcast a string message to all clients currently connected to
         /// the server.
         /// </summary>
         /// <param name="message"></param>
-        public void BroadcastToAll(string message)
+        public static void BroadcastToAll(string message, string uName, bool flag)
         {
-            foreach(TcpClient client in ClientSocketList)
+            foreach(DictionaryEntry client in ClientSocketList)
             {
-                BroadcastToSingle(client, message);
+                TcpClient broadcastSocket;
+                broadcastSocket = (TcpClient)client.Value;
+
+                if (broadcastSocket == null || !broadcastSocket.Connected)
+                {
+                    ClientSocketList.Remove(client);
+                    continue;
+                }
+
+                try
+                {
+                    NetworkStream broadcastStream = broadcastSocket.GetStream();
+                    Byte[] broadcastBytes = null;
+
+                    if (flag == true)
+                    {
+                        broadcastBytes = Encoding.ASCII.GetBytes(uName + " says : " + message);
+                    }
+                    else
+                    {
+                        broadcastBytes = Encoding.ASCII.GetBytes(message);
+                    }
+
+                    broadcastStream.Write(broadcastBytes, 0, broadcastBytes.Length);
+                    broadcastStream.Flush();
+                } 
+                catch (System.IO.IOException e)
+                {
+                    // If our socket has disconnected, remove the client
+                    continue;
+                }
             }
         }
     }
@@ -118,19 +147,19 @@ namespace ClientServerLibrary
     {
         TcpClient clientSocket;
         // The server thart created this client thread
-        Server ParentServer;
+        Hashtable clientsList;
         string clientNum;
 
         /// <summary>
         /// The function to start the client thread.
         /// </summary>
         /// <param name="inClientSocket">The associated client socket</param>
-        /// <param name="strClientNum">String containing the clients number</param>
-        public void startClient(Server server, TcpClient inClientSocket, string strClientNum)
+        /// <param name="strClientNum">String containing the client's number</param>
+        public void startClient(TcpClient inClientSocket, string strClientNum, Hashtable clist)
         {
-            this.ParentServer = server;
             this.clientSocket = inClientSocket;
             this.clientNum = strClientNum;
+            this.clientsList = clist;
             Thread ctThread = new Thread(()=>doChat());
             ctThread.Start();
         }
@@ -150,6 +179,9 @@ namespace ClientServerLibrary
 
             while ((true))
             {
+                if (!clientSocket.Connected)
+                    break;
+
                 try
                 {
                     // increment our response counter
@@ -158,16 +190,10 @@ namespace ClientServerLibrary
                     networkStream.Read(bytesFrom, 0, (int)clientSocket.ReceiveBufferSize);
                     dataFromClient = System.Text.Encoding.ASCII.GetString(bytesFrom);
                     dataFromClient = dataFromClient.Substring(0, dataFromClient.IndexOf("$"));
-                    Console.WriteLine(" >> " + "From client-" + clientNum + ": " + dataFromClient);
-
+                    Console.WriteLine(" >> " + "From client - " + clientNum + ": " + dataFromClient);
                     rCount = Convert.ToString(requestCount);
 
-                    // Respond back to the client by echoing the message
-                    // TODO:  Create a function for how to handle a server response for a speicfic application
-                    serverResponse = "Server to client(" + clientNum + ") " + "#" + rCount + ": " + dataFromClient;
-
-                    // Send our response to the clientsocket of this thread.
-                    ParentServer.BroadcastToSingle(clientSocket,serverResponse);
+                    Server.BroadcastToAll(dataFromClient, clientNum, true);
                 }
 
                 catch (System.IO.IOException ex)
@@ -187,7 +213,6 @@ namespace ClientServerLibrary
                     break;
                 }
             }
-
         }
     }
 }
